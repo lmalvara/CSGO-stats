@@ -3,7 +3,6 @@ from tkinter import *
 import ctypes
 from collections import deque
 
-
 profile = deque([None] * 2)
 
 #function to get users steam id
@@ -21,37 +20,20 @@ def getSteamID(search):
     else:
         status = False
 
-
     if status:
         url = 'https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=730&key=12A1D1DE83F9932934EDD6DF2BA00463&steamid=' + steamID
-        #profile = requests.get(url)
-        profile = 'some t of\n'
+        profile = requests.get(url)
         if not profile:
-            MessageBox = ctypes.windll.user32.MessageBoxW
-            MessageBox(None, 'Profile is private!', 'Alert', 0)
-            #print('profile is private!')
+            print('profile is private!')
         if profile:
-            #print(profile.json())
-            #allStats = profile.json().get('playerstats')
-            #print(allStats['stats'][0])
-            printInfo(profile)
+            print(profile.json())
+            allStats = profile.json().get('playerstats')
+            print(allStats['stats'][0])
     else:
         MessageBox = ctypes.windll.user32.MessageBoxW
         MessageBox(None, 'Enter a Valid Steam ID', 'Alert', 0)
 
     return 0
-
-
-def printInfo(info):
-
-    infoBox.config(state='normal')
-    tempInfoBox = Canvas(infoBox, bd=0, highlightthickness=0, relief='ridge', bg='green', width = 50, height = 50)
-    tempInfoBox.create_text(120, 25, text=info, fill='grey90', font=('', 12))
-    infoBox.window_create('1.0', window=tempInfoBox)
-
-    #infoBox.config(state='disabled')
-    return 0
-
 
 #function to get string from searchbar
 def getInput(event):
@@ -59,56 +41,48 @@ def getInput(event):
     string = searchbar.get()
     if string and len(string) < 33:
        getSteamID(string)
-
-    elif string and len(string) > 32:
-        MessageBox = ctypes.windll.user32.MessageBoxW
-        MessageBox(None, 'Invalid Steam ID, must be 32 characters or less', 'Alert', 0)
-
     else:
         MessageBox = ctypes.windll.user32.MessageBoxW
-        MessageBox(None, 'Enter a Steam ID', 'Alert', 0)
+        MessageBox(None, 'Enter a Valid Steam ID', 'Alert', 0)
 
 
 
 root = Tk()
-root.geometry("300x200")
+root.geometry("254x164")
 #root.resizable(0, 0)
 
 #Create 3 Frames
 titleFrame = Frame(root, bg="#111111")
-titleFrame.pack(fill = X)
+titleFrame.grid(row=0, sticky='N, E, S, W')
 
-bodyFrame = Frame(root, bg="red")
-bodyFrame.pack(fill = X)
+bodyFrame = Frame(root, bg="#111111")
+bodyFrame.grid(row=1, sticky='N, E, S, W')
 
-bottomFrame = Frame(root, bg='green')
-bottomFrame.pack(fill = X)
+bottomFrame = Frame(root, bg='#111111')
+bottomFrame.grid(row=2, sticky='N, E, S, W')
 
 #Top Frame
 searchLabel = Label(titleFrame, text = "Search: ", bg = 'grey20', fg='grey90', relief = 'raised')
-searchLabel.pack(side=LEFT)
+searchLabel.grid(row=0, column = 1, sticky='N, E, S, W')
 
 searchbar = Entry(titleFrame, width = 26, bg='grey40', fg= 'grey90')
-searchbar.pack(side=LEFT)
+searchbar.grid(row=0, column = 2, sticky='N, E, S, W')
 
 searchButton = Button(titleFrame, text = 'Go!' ,height=1, width=5, relief = 'raised', bd = 3, bg='green', fg='grey90')
-searchButton.pack(side=LEFT)
+searchButton.grid(row=0, column = 3, sticky='E')
 searchButton.bind('<Button-1>', getInput)
 root.bind('<Return>', getInput)
 
 #Body Frame
-canvas = Canvas(bodyFrame, bd=5, bg= 'grey20', cursor = "arrow", highlightthickness=0, relief='ridge', width=243, height=100)
-canvas.pack(expand=TRUE,fill=BOTH)
-infoBox = Text(canvas, wrap=WORD,height=110, bd=-1, cursor = "arrow", highlightthickness=0, bg='grey20', fg='black')
-canvas.create_window((0, 0), window=infoBox, anchor='nw')
-
-#infoBox.config(state='disabled')
+infoBox = Canvas(bodyFrame, bd=5, bg= 'grey20', cursor = "arrow", highlightthickness=0, relief='ridge', width=243, height=100)
+infoBox.grid(row=0, sticky='N, E, S, W')
+infoBox.config(state='disabled')
 
 #Bottom Frame
 expandButton1 = Button(bottomFrame,text='left', width = 5)
-expandButton1.pack()
+expandButton1.grid(row = 0, column = 1, sticky = "W")
 expandButton2 = Button(bottomFrame, text = 'center', width = 22)
-expandButton2.pack()
+expandButton2.grid(row = 0, column = 2, sticky = 'N, E, S, W')
 expandButton3 = Button(bottomFrame, text = 'right', width = 5)
-expandButton3.pack()
+expandButton3.grid(row = 0, column = 3, sticky = "E")
 root.mainloop()
