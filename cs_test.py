@@ -24,17 +24,20 @@ def getSteamID(search):
 
     if status:
         url = 'https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=730&key=12A1D1DE83F9932934EDD6DF2BA00463&steamid=' + steamID
-        #profile = requests.get(url)
-        profile = 'some t of\n'
+        profile = requests.get(url)
+
         if not profile:
             MessageBox = ctypes.windll.user32.MessageBoxW
             MessageBox(None, 'Profile is private!', 'Alert', 0)
             #print('profile is private!')
         if profile:
-            #print(profile.json())
-            #allStats = profile.json().get('playerstats')
-            #print(allStats['stats'][0])
-            printInfo(profile)
+            print(profile.json())
+            allStats = profile.json().get('playerstats')
+            title = allStats['stats'][0].get('name')
+            data = allStats['stats'][0].get('value')
+            temp = title + ': ' + str(data)
+            print(allStats['stats'][0])
+            printInfo(temp)
     else:
         MessageBox = ctypes.windll.user32.MessageBoxW
         MessageBox(None, 'Enter a Valid Steam ID', 'Alert', 0)
@@ -44,12 +47,19 @@ def getSteamID(search):
 
 def printInfo(info):
 
+    global profile
+
     infoBox.config(state='normal')
-    tempInfoBox = Canvas(infoBox, bd=0, highlightthickness=0, relief='ridge', bg='green', width = 50, height = 50)
+    tempInfoBox = Canvas(infoBox, bd=0, highlightthickness=0, relief='ridge', bg='green', width = 500, height = 50)
     tempInfoBox.create_text(120, 25, text=info, fill='grey90', font=('', 12))
     infoBox.window_create('1.0', window=tempInfoBox)
 
-    #infoBox.config(state='disabled')
+    profile.append(tempInfoBox)
+    old = profile.popleft()
+    if old != None:
+        infoBox.delete(old)
+
+    infoBox.config(state='disabled')
     return 0
 
 
