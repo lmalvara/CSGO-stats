@@ -6,29 +6,54 @@ from PIL import Image
 import io
 import ctypes
 from collections import deque
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+
 profileQue = deque([None] * 2)
 photos = []
+profileInfo = deque([None] * 2)
 
 
 #add or remove left widget from grid
 def moreStats_left(status):
-    if status:
+    global profileInfo
+    if status and profileInfo[1] != None:
+        stats = profileInfo[1]
+        print("UMM: ", stats)
+        message = "Profile: " + stats[0] + "\nTotal Kills: " + str(stats[1]) + "\nTotal Deaths: " + str(stats[2]) + "\nBombs Planted: " + str(stats[3]) + "\nBombs Defused: " + str(stats[4]) + "\nWinrate: " + str(stats[5]*100) + "%" + "\nTotal Hours Played: " + str(stats[6])
+        bonusStats_first.config(state='normal')
+        bonusStats_first.delete('1.0', END)
+        bonusStats_first.insert('1.0', message)
         bonusStats_first.grid(row=0,column=0, sticky='E', padx=2, pady=2)
+        bonusStats_first.config(state='disabled')
     elif not status:
         bonusStats_first.grid_remove()
 
 
 #add or remove right widget from grid
 def moreStats_right(status):
-    if status:
+    global profileInfo
+    if status and profileInfo[0] != None:
+        stats = profileInfo[0]
+        message = "Profile: " + stats[0] + "\nTotal Kills: " + str(stats[1]) + "\nTotal Deaths: " + str(stats[2]) + "\nBombs Planted: " + str(stats[3]) + "\nBombs Defused: " + str(stats[4]) + "\nWinrate: " + str(stats[5] * 100) + "%" + "\nTotal Hours Played: " + str(stats[6])
+        bonusStats_sec.config(state='normal')
+        bonusStats_sec.delete('1.0', END)
+        bonusStats_sec.insert('1.0', message)
         bonusStats_sec.grid(row=0,column=2, sticky='E', padx=2, pady=2)
+        bonusStats_sec.config(state='disabled')
     elif not status:
         bonusStats_sec.grid_remove()
 
 
 #add or remove graph widget from grid
 def moreStats_graph(status):
-    if status:
+    global profileInfo
+    if status and profileInfo[0] != None and profileInfo[1] != None:
         bonusStats_graph.grid(row=1, columnspan =4, pady=1)
     else:
         bonusStats_graph.grid_remove()
@@ -146,6 +171,7 @@ def getSteamPFP(id):
 
 #function to get users steam id
 def getSteamID(search):
+    global profileInfo
     # search custom steam id
     url = 'http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=12A1D1DE83F9932934EDD6DF2BA00463&vanityurl=' + search
 
@@ -171,15 +197,33 @@ def getSteamID(search):
             MessageBox = ctypes.windll.user32.MessageBoxW
             MessageBox(None, 'Profile is private!', 'Alert!', 0)
 
+            profileInfo.append(None)
+            profileInfo.popleft()
+            print("HMM: ", profileInfo)
+
         #steam profile is public
         if profile:
             print(profile.json())
             allStats = profile.json().get('playerstats')
-            #title = allStats['stats'][0].get('name')
-            #data = allStats['stats'][0].get('value')
-            #temp = title + ': ' + str(data)
+
+            kills = allStats['stats'][0].get('value')
+            deaths = allStats['stats'][1].get('value')
+            plant = allStats['stats'][3].get('value')
+            defuse = allStats['stats'][4].get('value')
+            winrate = round(allStats['stats'][5].get('value') / allStats['stats'][45].get('value'), 2)
+            time = round(allStats['stats'][2].get('value')/3600)
+
+            mini_message = search + ": \nK/D: " + str(round(kills/deaths, 2)) +"\nWinrate: " + str(winrate) + "\n" + str(time) + " hours Played"
+
+            #send player_stats which contains the keys statistics
+            player_stats = [search, kills, deaths, plant, defuse, winrate, time]
+
+            profileInfo.append(player_stats)
+            profileInfo.popleft()
+            print("HMM: ", profileInfo)
+
             #print(allStats['stats'][0])
-            printInfo(allStats, getSteamPFP(steamID), profile)
+            printInfo(mini_message, getSteamPFP(steamID), player_stats)
     else:
         MessageBox = ctypes.windll.user32.MessageBoxW
         MessageBox(None, 'Enter a Valid Steam ID.', 'Alert!', 0)
@@ -193,10 +237,8 @@ def printInfo(info, image_url, status):
     global profileQue
     global photos
 
-
     infoBox.config(state='normal')
-    tempInfoBox = Canvas(infoBox, bd=0, highlightthickness=0, relief='ridge', bg='green', width=280, height=64)
-
+    tempInfoBox = Canvas(infoBox, bd=0, highlightthickness=0, relief='ridge', bg='green', width=280, height=100)
 
     #print pfp and 'PRIVATE' text
     if not status:
@@ -204,8 +246,8 @@ def printInfo(info, image_url, status):
         img = Image.open(io.BytesIO(response.content))
         ph = PIL.ImageTk.PhotoImage(img)
         photos.append(ph)
-        tempInfoBox.create_image(0, 0, image=photos[-1], anchor=NW)
-        tempInfoBox.create_text(165, 30, text="PRIVATE", fill='yellow', font=('', 12))
+        tempInfoBox.create_image(0, 12, image=photos[-1], anchor=NW)
+        tempInfoBox.create_text(150, 45, text="PRIVATE", fill='yellow', font=('', 12))
 
     #print pfp and stats
     if status:
@@ -213,9 +255,8 @@ def printInfo(info, image_url, status):
         img = Image.open(io.BytesIO(response.content))
         ph = PIL.ImageTk.PhotoImage(img)
         photos.append(ph)
-        tempInfoBox.create_image(0, 0, image=photos[-1], anchor=NW)
-        tempInfoBox.create_text(165, 30, text=info, fill='yellow', font=('', 12))
-
+        tempInfoBox.create_image(0, 12, image=photos[-1], anchor=NW)
+        tempInfoBox.create_text(150, 45, text=info, fill='yellow', font=('', 12))
 
     #create & add created text widget to que, delete old
     infoBox.window_create('1.0', window=tempInfoBox)
@@ -225,20 +266,64 @@ def printInfo(info, image_url, status):
         infoBox.delete(old)
 
     #enable/disable extra stats button depending on if stats are in queue
-    if profileQue[1] != None:
+    if profileInfo[0] != None and profileInfo[1] != None:
         b1.config(state='normal')
         b2.config(state='normal')
-    else:
+        b3.config(state='normal')
+    if profileInfo[0] != None and profileInfo[1] == None:
+        b1.config(state='disabled')
+        b2.config(state='disabled')
+        b3.config(state='normal')
+    if profileInfo[0] == None and profileInfo[1] == None:
         b1.config(state='disabled')
         b2.config(state='disabled')
         b3.config(state='disabled')
-    if profileQue[0] != None:
-        b3.config(state='normal')
-    else:
+    if profileInfo[0] == None and profileInfo[1] != None:
+        b1.config(state='normal')
+        b2.config(state='disabled')
         b3.config(state='disabled')
 
+
     infoBox.config(state='disabled')
+
     return 0
+
+def createGraph(users, kills, death, plant, defuse, winrate, hours):
+    labels = ['Kills', 'Deaths', 'Bomb Plant', "Defuse", "Win %", "Hours"]
+    player_One = [kills, death, plant, defuse, winrate, hours]
+    player_Two = [kills, death, plant, defuse, winrate, hours]
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.35  # the width of the bars
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width / 2, player_One, width, label=users[0])
+    rects2 = ax.bar(x + width / 2, player_Two, width, label=users[1])
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('')
+    ax.set_title('Stats')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    def autolabel(rects):
+        """Attach a text label above each bar in *rects*, displaying its height."""
+        for rect in rects:
+            height = rect.get_height()
+            ax.annotate('{}'.format(height),
+                        xy=(rect.get_x() + rect.get_width() / 2, height),
+                        xytext=(0, 3),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom')
+
+    autolabel(rects1)
+    autolabel(rects2)
+
+    fig.tight_layout()
+
+    canvas = FigureCanvasTkAgg(fig, root)
+    canvas.draw()
+    canvas.get_tk_widget().grid()
 
 
 #function to get string from searchbar
@@ -260,7 +345,7 @@ def getInput(event):
 #create Tkinter UI
 root = Tk()
 root.geometry("290x250")
-root.resizable(0, 0)
+#root.resizable(0, 0)
 root.config(bg='grey20')
 
 #Create 3 Frames
@@ -320,5 +405,6 @@ b3 = Button(bottomFrame, textvariable=details_second, command=expand_close_windo
 details_second.set('Right +')
 b3.grid(row=0, column=2, sticky='e')
 b3.config(state='disabled')
+
 
 root.mainloop()
