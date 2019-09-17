@@ -16,6 +16,8 @@ import numpy as np
 
 profileQue = deque([None] * 2)
 photos = []
+graph = []
+#name, kills, death, plant, defuses, winrate, hours
 profileInfo = deque([None] * 2)
 
 
@@ -53,9 +55,39 @@ def moreStats_right(status):
 #add or remove graph widget from grid
 def moreStats_graph(status):
     global profileInfo
-    if status and profileInfo[0] != None and profileInfo[1] != None:
+    global graph
+    print(profileInfo, "UHUHH")
+    if status:
+        labels = ['K/D', 'Bomb Plant', 'Defuse', 'Win %', 'Hours']
+        player_One = [round(profileInfo[0][1] / profileInfo[0][2], 2), profileInfo[0][3], profileInfo[0][4], profileInfo[0][5], profileInfo[0][6]]
+        player_Two = [round(profileInfo[1][1] / profileInfo[1][2], 2), profileInfo[1][3], profileInfo[1][4], profileInfo[1][5], profileInfo[1][6]]
+
+        x = np.arange(len(labels))
+        width = .4
+        fig, ax = plt.subplots(figsize=(4.8,3.2))
+        rects1 = ax.bar(x - width / 2, player_One, width, label=profileInfo[0][0])
+        rects2 = ax.bar(x + width / 2, player_Two, width, label=profileInfo[1][0])
+
+        ax.set_ylabel('')
+        ax.set_title('Stats')
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.legend()
+
+        def autolabel(rects):
+            for rect in rects:
+                height = rect.get_height()
+                ax.annotate('{}'.format(height), xy=(rect.get_x() + rect.get_width() / 2, height), xytext=(0, 3), textcoords = "offset points", ha='center', va='bottom')
+
+        autolabel(rects1)
+        autolabel(rects2)
+        fig.tight_layout()
+        canvas = FigureCanvasTkAgg(fig, bonusStats_graph)
+        graph = canvas
+        canvas.get_tk_widget().grid()
         bonusStats_graph.grid(row=1, columnspan =4, pady=1)
     else:
+        graph.get_tk_widget().destroy()
         bonusStats_graph.grid_remove()
 
 
@@ -199,7 +231,6 @@ def getSteamID(search):
 
             profileInfo.append(None)
             profileInfo.popleft()
-            print("HMM: ", profileInfo)
 
         #steam profile is public
         if profile:
@@ -220,7 +251,7 @@ def getSteamID(search):
 
             profileInfo.append(player_stats)
             profileInfo.popleft()
-            print("HMM: ", profileInfo)
+
 
             #print(allStats['stats'][0])
             printInfo(mini_message, getSteamPFP(steamID), player_stats)
@@ -288,43 +319,6 @@ def printInfo(info, image_url, status):
 
     return 0
 
-def createGraph(users, kills, death, plant, defuse, winrate, hours):
-    labels = ['Kills', 'Deaths', 'Bomb Plant', "Defuse", "Win %", "Hours"]
-    player_One = [kills, death, plant, defuse, winrate, hours]
-    player_Two = [kills, death, plant, defuse, winrate, hours]
-
-    x = np.arange(len(labels))  # the label locations
-    width = 0.35  # the width of the bars
-    fig, ax = plt.subplots()
-    rects1 = ax.bar(x - width / 2, player_One, width, label=users[0])
-    rects2 = ax.bar(x + width / 2, player_Two, width, label=users[1])
-
-    # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('')
-    ax.set_title('Stats')
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.legend()
-
-    def autolabel(rects):
-        """Attach a text label above each bar in *rects*, displaying its height."""
-        for rect in rects:
-            height = rect.get_height()
-            ax.annotate('{}'.format(height),
-                        xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom')
-
-    autolabel(rects1)
-    autolabel(rects2)
-
-    fig.tight_layout()
-
-    canvas = FigureCanvasTkAgg(fig, root)
-    canvas.draw()
-    canvas.get_tk_widget().grid()
-
 
 #function to get string from searchbar
 def getInput(event):
@@ -382,10 +376,10 @@ infoBox.config(state='disabled')
 #create the text boxes to be later inserted when called for
 bonusStats_first = Text(bodyFrame, wrap=WORD, height=12, width=35, bd=-1, cursor="arrow", highlightthickness=0, bg='green', fg='black')
 bonusStats_sec = Text(bodyFrame, wrap=WORD, height=12, width=35, bd=-1, cursor="arrow", highlightthickness=0, bg='red', fg='black')
-bonusStats_graph = Text(bodyFrame, wrap=WORD, height=20, width=60, bd=-1, cursor="arrow", highlightthickness=0, bg='yellow', fg='black')
+bonusStats_graph = Canvas(bodyFrame, height=320, width=482, bd=-1, cursor="arrow", highlightthickness=0, bg='yellow')
 bonusStats_first.config(state='disabled')
 bonusStats_sec.config(state='disabled')
-bonusStats_graph.config(state='disabled')
+bonusStats_graph.config(state='normal')
 
 #Bottom Frame
 details_first = StringVar()
